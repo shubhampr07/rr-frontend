@@ -87,7 +87,7 @@ const App: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/customers");
+      const res = await fetch("https://rr-backend-h3f5.onrender.com/api/customers");
       const data = await res.json();
       if (data.success) {
         setCustomers(data.data);

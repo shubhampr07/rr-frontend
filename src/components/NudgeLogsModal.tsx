@@ -82,7 +82,7 @@ const NudgeLogsModal: React.FC<NudgeLogsModalProps> = ({
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/nudge/logs/${customerId}`);
+      const res = await fetch(`https://rr-backend-h3f5.onrender.com/api/nudge/logs/${customerId}`);
       const data = await res.json();
       if (data.success) {
         setLogs(data.data);

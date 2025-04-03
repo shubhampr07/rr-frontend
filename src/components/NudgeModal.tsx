@@ -76,7 +76,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
       
       // Send POST without additional message/subject payload, so backend defaults apply
       const res = await fetch(
-        `http://localhost:5000/api/nudge/${customerId}/${touchpoint}/${channel}`,
+        `https://rr-backend-h3f5.onrender.com/api/nudge/${customerId}/${touchpoint}/${channel}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

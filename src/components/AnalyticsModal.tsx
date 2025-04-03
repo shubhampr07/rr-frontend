@@ -67,7 +67,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ onClose }) => {
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/metrics/success");
+      const res = await fetch("https://rr-backend-h3f5.onrender.com/api/metrics/success");
       const data = await res.json();
       if (data.success) {
         setMetrics(data.data);
