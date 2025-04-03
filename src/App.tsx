@@ -231,7 +231,7 @@ const App: React.FC = () => {
                 >
                   <Card className="bg-slate-900/60 border-slate-700 overflow-hidden backdrop-blur-sm shadow-xl">
                     <CardContent className="p-0 overflow-auto">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto scrollbar-hide">
                         <Table>
                           <TableHeader className="bg-gradient-to-r from-slate-900 to-slate-800 sticky top-0 z-10">
                             <TableRow className="hover:bg-slate-800/80 border-slate-700">

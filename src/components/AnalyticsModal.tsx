@@ -458,49 +458,54 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ onClose }) => {
                     </motion.div>
                     
                     <motion.div variants={itemVariants}>
-                      <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                        <CardHeader className="p-4 border-b border-slate-700/50">
-                          <div className="grid grid-cols-12 font-medium text-sm text-slate-300">
-                            <div className="col-span-5">Customer</div>
-                            <div className="col-span-5">Success Rate</div>
-                            <div className="col-span-2">Status</div>
+                    <Card className="bg-slate-800 border-slate-700 overflow-hidden">
+                      <CardHeader className="p-4 border-b border-slate-700/50">
+                        <div className="grid grid-cols-12 gap-x-4 font-medium text-sm text-slate-300">
+                          <div className="col-span-5">Customer</div>
+                          <div className="col-span-5">Success Rate</div>
+                          <div className="col-span-2">Status</div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <ScrollArea className="h-64 w-full">
+                          <div className="divide-y divide-slate-700/30">
+                            {sortedBreakdown.map((item, index) => (
+                              <motion.div 
+                                key={item.customerId} 
+                                className="grid grid-cols-12 gap-x-4 p-4 hover:bg-slate-700/50"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                              >
+                                <div className="col-span-5 font-medium text-slate-200">
+                                  {item.customerName}
+                                </div>
+                                <div className="col-span-5 mt-2">
+                                  <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden mb-1">
+                                    <motion.div 
+                                      className={`h-full bg-gradient-to-r ${getStatusColor(item.successRate)}`}
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${item.successRate}%` }}
+                                      transition={{ duration: 0.5, delay: 0.1 + (index * 0.02) }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-300">
+                                    {item.successRate}%
+                                  </span>
+                                </div>
+                                <div className="col-span-2 mb-1">
+                                  <Badge className={`${getStatusBadgeClass(item.successRate)}`}>
+                                    {item.successRate >= 75 ? "Great" : item.successRate >= 50 ? "Average" : "Poor"}
+                                  </Badge>
+                                </div>
+                              </motion.div>
+                            ))}
                           </div>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          <ScrollArea className="h-64 w-full">
-                            <div className="divide-y divide-slate-700/30">
-                              {sortedBreakdown.map((item, index) => (
-                                <motion.div 
-                                  key={item.customerId} 
-                                  className="grid grid-cols-12 p-4 hover:bg-slate-700/50"
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: index * 0.05 }}
-                                >
-                                  <div className="col-span-5 font-medium text-slate-200">{item.customerName}</div>
-                                  <div className="col-span-5">
-                                    <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden mb-1">
-                                      <motion.div 
-                                        className={`h-full bg-gradient-to-r ${getStatusColor(item.successRate)}`}
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${item.successRate}%` }}
-                                        transition={{ duration: 0.5, delay: 0.1 + (index * 0.02) }}
-                                      />
-                                    </div>
-                                    <span className="text-xs font-medium text-slate-300">{item.successRate}%</span>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <Badge className={`${getStatusBadgeClass(item.successRate)}`}>
-                                      {item.successRate >= 75 ? "Great" : item.successRate >= 50 ? "Average" : "Poor"}
-                                    </Badge>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
                   </motion.div>
                 ) : (
                   <div className="flex items-center justify-center h-64">
