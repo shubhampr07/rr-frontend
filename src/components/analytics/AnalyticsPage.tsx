@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { PieChart, BarChart, ArrowUpRight, Timer, CreditCard, Users, CalendarClock, DollarSign, PercentCircle, LineChart, WalletCards, BadgePercent, ScanSearch } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { PieChart, BarChart, Timer, CreditCard, DollarSign, LineChart, ScanSearch } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import ROICard from "./ROICard";
 import RevenueChart from "./RevenueChart";
 import SubscriptionAnalytics from "./SubscriptionAnalytics";
 import PerformanceMetrics from "./PerformanceMetrics";
-import MerchantAnalytics from "./MerchantAnalytics";
 import AnalyticsModal from "../AnalyticsModal";
 
 

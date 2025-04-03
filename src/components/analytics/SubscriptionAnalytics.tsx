@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Calendar, CreditCard, Clock, BadgePercent, TrendingUp, CircleDollarSign } from "lucide-react";
+import { Calendar, CreditCard, Clock, BadgePercent, CircleDollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 interface SubscriptionAnalyticsProps {

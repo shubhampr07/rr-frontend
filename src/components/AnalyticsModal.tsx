@@ -4,9 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  CardHeader
 } from "../components/ui/card";
 import {
   Dialog,
@@ -17,7 +15,6 @@ import {
 } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Progress } from "../components/ui/progress";
 import { Skeleton } from "../components/ui/skeleton";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Badge } from "../components/ui/badge";

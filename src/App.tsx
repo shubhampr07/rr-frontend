@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Card, 
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription 
 } from "./components/ui/card";
 import { 
   Table, 
@@ -27,8 +24,7 @@ import {
 import { Button } from "./components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Skeleton } from "./components/ui/skeleton";
-import { BarChart, Activity, Users, MessageSquare, MoreVertical, PieChart, Check, X, ChevronUp, ChevronDown } from "lucide-react";
-import AnalyticsModal from "./components/AnalyticsModal";
+import { BarChart, Activity, Users, MessageSquare, MoreVertical, PieChart, Check, X } from "lucide-react";
 import NudgeLogsModal from "./components/NudgeLogsModal";
 import NudgeModal from "./components/NudgeModal";
 import AnalyticsPage from "./components/analytics/AnalyticsPage";

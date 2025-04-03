@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { LineChart, BarChart3, PieChart, TrendingUp, Sparkles, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import {  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 interface PerformanceMetricsProps {
   data: {
