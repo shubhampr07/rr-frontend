@@ -90,11 +90,11 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('customers');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [showAnalytics, setShowAnalytics] = useState<boolean>(false);
+  const [_showAnalytics, setShowAnalytics] = useState<boolean>(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showNudgeModal, setShowNudgeModal] = useState<boolean>(false);
   const [showLogsModal, setShowLogsModal] = useState<boolean>(false);
-  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
+  const [expandedCustomer, _setExpandedCustomer] = useState<string | null>(null);
   const [showCustomerAnalytics, setShowCustomerAnalytics] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<string>("customers");
 

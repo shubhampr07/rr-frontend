@@ -34,7 +34,7 @@ const mockAnalyticsData = {
 
 const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  // const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   
   // Container animation variants
   const containerVariants = {
