@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { PieChart, BarChart, Timer, CreditCard, DollarSign, LineChart, ScanSearch } from "lucide-react";
+import { PieChart, BarChart, Timer, CreditCard, DollarSign, LineChart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import ROICard from "./ROICard";
 import RevenueChart from "./RevenueChart";
 import SubscriptionAnalytics from "./SubscriptionAnalytics";
 import PerformanceMetrics from "./PerformanceMetrics";
-import AnalyticsModal from "../AnalyticsModal";
 
 
 // Mock data
 const mockAnalyticsData = {
-  freeTrialStatus: "Active", // or "Expired" or "Not Started"
+  freeTrialStatus: "Active", 
   plan: "Premium",
   subscriptionMonthly: 2999,
   commission: 15, // percentage
@@ -32,6 +30,7 @@ const mockAnalyticsData = {
   payoutsCost: 8000,
   roi: 4.8,
 };
+
 
 const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -63,14 +62,14 @@ const AnalyticsPage: React.FC = () => {
           </h2>
           <p className="text-slate-400">Comprehensive view of your business performance</p>
         </div>
-        <Button 
+        {/* <Button 
           variant="outline" 
           className="bg-slate-900/50 border-slate-700 hover:bg-slate-800 text-slate-300 hover:text-white transition-all gap-2"
           onClick={() => setShowAnalyticsModal(true)}
         >
           <ScanSearch size={16} />
           View All Analytics
-        </Button>
+        </Button> */}
       </div>
 
       <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
@@ -266,10 +265,6 @@ const AnalyticsPage: React.FC = () => {
           </TabsContent>
         </motion.div>
       </Tabs>
-
-      {showAnalyticsModal && (
-        <AnalyticsModal onClose={() => setShowAnalyticsModal(false)} />
-      )}
     </div>
   );
 };

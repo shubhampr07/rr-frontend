@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -17,11 +17,13 @@ import {
 } from "../components/ui/select";
 import { 
   Card,
-  CardContent 
+  CardContent,
 } from "../components/ui/card";
 import { Label } from "../components/ui/label";
 import { Alert, AlertDescription } from "../components/ui/alert";
+import { Input } from "../components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { Checkbox } from "../components/ui/checkbox";
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -30,17 +32,33 @@ import {
   Phone, 
   BellRing, 
   MessageCircle, 
-  ChevronDown, 
   RefreshCw, 
   MailCheck, 
   Rocket, 
   Mail, 
-  Check
+  Check,
+  Edit,
+  User,
+  Plus,
+  Trash2,
+  Save,
+  X
 } from "lucide-react";
+
+interface ContactInfo {
+  id: string;
+  type: "email" | "phone";
+  value: string;
+  isChecked: boolean;
+  isPrimary: boolean;
+  isEditing?: boolean;
+}
 
 interface NudgeModalProps {
   customerId: string;
   customerName: string;
+  customerEmail: string;
+  customerPhone: string;
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -48,6 +66,8 @@ interface NudgeModalProps {
 const NudgeModal: React.FC<NudgeModalProps> = ({
   customerId,
   customerName,
+  customerEmail,
+  customerPhone,
   onClose,
   onSuccess
 }) => {
@@ -55,6 +75,10 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
   const [channel, setChannel] = useState("email");
   const [responseMsg, setResponseMsg] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [contactList, setContactList] = useState<ContactInfo[]>([]);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newContactType, setNewContactType] = useState<"email" | "phone">("email");
+  const [newContactValue, setNewContactValue] = useState("");
 
   // Animation variants
   const containerVariants = {
@@ -70,28 +94,240 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
     }
   };
 
+  // Initialize contacts from props
+  useEffect(() => {
+    const initialContacts: ContactInfo[] = [];
+    
+    if (customerEmail) {
+      initialContacts.push({
+        id: "email-1",
+        type: "email",
+        value: customerEmail,
+        isChecked: false,
+        isPrimary: true
+      });
+    }
+    
+    if (customerPhone) {
+      initialContacts.push({
+        id: "phone-1",
+        type: "phone",
+        value: customerPhone,
+        isChecked: false,
+        isPrimary: true
+      });
+    }
+    
+    setContactList(initialContacts);
+  }, [customerEmail, customerPhone]);
+
+  // Filter contacts based on selected channel
+  const filteredContacts = contactList.filter(contact => 
+    (channel === "email" && contact.type === "email") || 
+    (channel === "whatsapp" && contact.type === "phone")
+  );
+
+  // Check if any contact is selected for the current channel
+  const hasSelectedContact = filteredContacts.some(contact => contact.isChecked);
+
   const handleSendNudge = async () => {
     try {
       setStatus("loading");
       
-      // Send POST without additional message/subject payload, so backend defaults apply
+      // Get all selected contacts for the current channel
+      const selectedContacts = filteredContacts
+        .filter(contact => contact.isChecked)
+        .map(contact => contact.value);
+      
+      if (selectedContacts.length === 0) {
+        setResponseMsg("Please select at least one contact");
+        setStatus("error");
+        return;
+      }
+      
+      // Send POST with all selected recipients
       const res = await fetch(
         `https://rr-backend-h3f5.onrender.com/api/nudge/${customerId}/${touchpoint}/${channel}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}) // no custom message/subject sent
+          body: JSON.stringify({
+            recipients: selectedContacts
+          })
         }
       );
       
       const data = await res.json();
       
       if (data.success) {
-        setResponseMsg("Nudge sent successfully");
+        setResponseMsg(`Nudge sent successfully to ${selectedContacts.length} ${selectedContacts.length > 1 ? "contacts" : "contact"}`);
         setStatus("success");
         onSuccess && onSuccess();
       } else {
         setResponseMsg(data.error || "Error sending nudge");
+        setStatus("error");
+      }
+    } catch (error: any) {
+      setResponseMsg("Error: " + error.message);
+      setStatus("error");
+    }
+  };
+
+  const handleContactToggle = (id: string) => {
+    setContactList(prevList => 
+      prevList.map(contact => 
+        contact.id === id 
+          ? { ...contact, isChecked: !contact.isChecked }
+          : contact
+      )
+    );
+  };
+
+  const handleEditContact = (id: string) => {
+    setContactList(prevList => 
+      prevList.map(contact => 
+        contact.id === id 
+          ? { ...contact, isEditing: true }
+          : contact
+      )
+    );
+  };
+
+  const handleSaveContact = async (id: string, newValue: string) => {
+    try {
+      // API call to update contact
+      const contactToUpdate = contactList.find(c => c.id === id);
+      if (!contactToUpdate) return;
+
+      const res = await fetch(
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: contactToUpdate.type,
+            value: newValue
+          })
+        }
+      );
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Update local state
+        setContactList(prevList => 
+          prevList.map(contact => 
+            contact.id === id 
+              ? { ...contact, value: newValue, isEditing: false }
+              : contact
+          )
+        );
+      } else {
+        setResponseMsg(data.error || "Error updating contact");
+        setStatus("error");
+      }
+    } catch (error: any) {
+      setResponseMsg("Error: " + error.message);
+      setStatus("error");
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    try {
+      // API call to delete contact
+      const res = await fetch(
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}`,
+        {
+          method: "DELETE"
+        }
+      );
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Update local state
+        setContactList(prevList => prevList.filter(contact => contact.id !== id));
+      } else {
+        setResponseMsg(data.error || "Error deleting contact");
+        setStatus("error");
+      }
+    } catch (error: any) {
+      setResponseMsg("Error: " + error.message);
+      setStatus("error");
+    }
+  };
+
+  const handleAddContact = async () => {
+    try {
+      if (!newContactValue.trim()) {
+        setResponseMsg(`Please enter a valid ${newContactType}`);
+        setStatus("error");
+        return;
+      }
+
+      // API call to add new contact
+      const res = await fetch(
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: newContactType,
+            value: newContactValue
+          })
+        }
+      );
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Add to local state with returned ID
+        const newContact: ContactInfo = {
+          id: data.contactId || `${newContactType}-${Date.now()}`,
+          type: newContactType,
+          value: newContactValue,
+          isChecked: true,
+          isPrimary: contactList.filter(c => c.type === newContactType).length === 0
+        };
+        
+        setContactList(prevList => [...prevList, newContact]);
+        setNewContactValue("");
+        setIsAddingNew(false);
+      } else {
+        setResponseMsg(data.error || "Error adding contact");
+        setStatus("error");
+      }
+    } catch (error: any) {
+      setResponseMsg("Error: " + error.message);
+      setStatus("error");
+    }
+  };
+
+  const handleMakePrimary = async (id: string) => {
+    try {
+      const contactToUpdate = contactList.find(c => c.id === id);
+      if (!contactToUpdate) return;
+
+      // API call to make contact primary
+      const res = await fetch(
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}/primary`,
+        {
+          method: "PUT"
+        }
+      );
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Update local state
+        setContactList(prevList => 
+          prevList.map(contact => ({
+            ...contact,
+            isPrimary: contact.id === id && contact.type === contactToUpdate.type
+          }))
+        );
+      } else {
+        setResponseMsg(data.error || "Error updating primary contact");
         setStatus("error");
       }
     } catch (error: any) {
@@ -208,6 +444,191 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Contact Details Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-slate-300 flex items-center gap-2">
+                    <User size={14} className="text-violet-400" />
+                    Contact Details
+                  </Label>
+                  
+                  {!isAddingNew && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setIsAddingNew(true);
+                        setNewContactType(channel === "email" ? "email" : "phone");
+                      }}
+                      className="h-7 px-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md flex items-center gap-1"
+                    >
+                      <Plus size={14} />
+                      <span className="text-xs">Add {channel === "email" ? "Email" : "Phone"}</span>
+                    </Button>
+                  )}
+                </div>
+                
+                <Card className="bg-slate-900 border-slate-700">
+                  <CardContent className="p-3 space-y-3">
+                    {filteredContacts.length > 0 ? (
+                      <>
+                        {filteredContacts.map((contact) => (
+                          <div key={contact.id} className="rounded-md border border-slate-700 bg-slate-800 p-3">
+                            {contact.isEditing ? (
+                              <div className="flex gap-2 items-center">
+                                <Input 
+                                  defaultValue={contact.value}
+                                  id={`edit-${contact.id}`}
+                                  className="bg-slate-900 border-slate-700 text-slate-300 flex-1"
+                                />
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleSaveContact(contact.id, (document.getElementById(`edit-${contact.id}`) as HTMLInputElement)?.value || "")}
+                                  className="h-8 w-8 p-0 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300"
+                                >
+                                  <Save size={14} />
+                                </Button>
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setContactList(prevList => prevList.map(c => c.id === contact.id ? {...c, isEditing: false} : c))}
+                                  className="h-8 w-8 p-0 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-300"
+                                >
+                                  <X size={14} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Checkbox 
+                                    id={`check-${contact.id}`}
+                                    checked={contact.isChecked}
+                                    onCheckedChange={() => handleContactToggle(contact.id)}
+                                    className="border-slate-600 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                  />
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      {contact.type === "email" ? 
+                                        <Mail size={14} className="text-amber-400" /> : 
+                                        <Phone size={14} className="text-emerald-400" />
+                                      }
+                                      <span className="text-slate-300">{contact.value}</span>
+                                    </div>
+                                    {contact.isPrimary && (
+                                      <span className="text-xs text-indigo-400 mt-1 block">Primary</span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  {!contact.isPrimary && (
+                                    <Button
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleMakePrimary(contact.id)}
+                                      className="h-7 text-xs px-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700"
+                                    >
+                                      Set Primary
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditContact(contact.id)}
+                                    className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-white hover:bg-slate-700"
+                                  >
+                                    <Edit size={14} />
+                                  </Button>
+                                  {!contact.isPrimary && (
+                                    <Button
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleDeleteContact(contact.id)}
+                                      className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-700"
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        {filteredContacts.length > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Select/deselect all contacts
+                              const allChecked = filteredContacts.every(c => c.isChecked);
+                              setContactList(prevList => 
+                                prevList.map(contact => 
+                                  filteredContacts.some(c => c.id === contact.id)
+                                    ? { ...contact, isChecked: !allChecked }
+                                    : contact
+                                )
+                              );
+                            }}
+                            className="w-full h-8 mt-2 bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300 text-xs"
+                          >
+                            {filteredContacts.every(c => c.isChecked) ? "Deselect All" : "Select All"} 
+                            {channel === "email" ? " Emails" : " Phone Numbers"}
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center p-4 text-slate-400 text-center">
+                        No {channel === "email" ? "email addresses" : "phone numbers"} available
+                      </div>
+                    )}
+                    
+                    {isAddingNew && (
+                      <div className="mt-3 p-3 rounded-md border border-indigo-500/30 bg-indigo-500/10">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            {channel === "email" ? 
+                              <Mail size={14} className="text-amber-400" /> : 
+                              <Phone size={14} className="text-emerald-400" />
+                            }
+                            <span className="text-slate-300">Add new {newContactType === "email" ? "email address" : "phone number"}</span>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Input 
+                              value={newContactValue}
+                              onChange={(e) => setNewContactValue(e.target.value)}
+                              placeholder={newContactType === "email" ? "Enter email" : "Enter phone number"}
+                              className="bg-slate-800 border-slate-700 text-slate-300 placeholder:text-slate-500"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleAddContact}
+                              className="bg-indigo-500/20 hover:bg-indigo-500/30 border-indigo-500/30 text-indigo-300"
+                            >
+                              Add
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsAddingNew(false);
+                                setNewContactValue("");
+                              }}
+                              className="bg-transparent hover:bg-slate-700 border-slate-600 text-slate-300"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
 
@@ -248,7 +669,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
           </Button>
           <Button 
             onClick={handleSendNudge}
-            disabled={status === "loading"}
+            disabled={status === "loading" || !hasSelectedContact}
             className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 gap-2"
           >
             {status === "loading" ? (
@@ -264,7 +685,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                Send Nudge
+                Send Nudge{filteredContacts.filter(c => c.isChecked).length > 1 ? " to All" : ""}
               </>
             )}
           </Button>
