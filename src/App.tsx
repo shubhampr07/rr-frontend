@@ -26,12 +26,13 @@ import {
 import { Button } from "./components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Skeleton } from "./components/ui/skeleton";
-import { BarChart, Activity, Users, MessageSquare, MoreVertical, PieChart, ArrowLeft, ChartArea } from "lucide-react";
+import { BarChart, Activity, Users, MessageSquare, MoreVertical, PieChart, ArrowLeft, ChartArea, FileText } from "lucide-react";
 import NudgeLogsModal from "./components/NudgeLogsModal";
 import NudgeModal from "./components/NudgeModal";
 import AnalyticsPage from "./components/analytics/AnalyticsPage";
 import TouchpointSwitch from "./components/TouchPointSwitch";
 import AnalyticsModal from "./components/AnalyticsModal";
+import NotesModal from "./components/NotesModal";
 
 // Floating gradient background component
 // const BackgroundGradient = () => (
@@ -46,10 +47,11 @@ import AnalyticsModal from "./components/AnalyticsModal";
 interface Customer {
   _id: string;
   name: string;
+  note: string;
   pointOfContact: {
     name: string;
-    email: string;
-    phone: string;
+    email: string[];
+    phone: string[];
   }
   offer: {
     discount: string;
@@ -97,6 +99,7 @@ const App: React.FC = () => {
   const [expandedCustomer, _setExpandedCustomer] = useState<string | null>(null);
   const [showCustomerAnalytics, setShowCustomerAnalytics] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<string>("customers");
+  const [showNotesModal, setShowNotesModal] = useState<boolean>(false);
 
   const fetchCustomers = async () => {
     try {
@@ -117,25 +120,6 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchCustomers();
   }, []);
-
-
-  // const StatusIndicator = ({ active }: { active: boolean }) => (
-  //   <motion.div 
-  //     initial={{ opacity: 0, scale: 0.9 }}
-  //     animate={{ opacity: 1, scale: 1 }}
-  //     className="flex items-center justify-center"
-  //   >
-  //     {active ? (
-  //       <div className="w-6 h-6 flex items-center justify-center">
-  //         <Check size={20} className="text-emerald-500" />
-  //       </div>
-  //     ) : (
-  //       <div className="w-6 h-6 flex items-center justify-center">
-  //         <X size={20} className="text-red-500" />
-  //       </div>
-  //     )}
-  //   </motion.div>
-  // );
 
   // Animation variants
   const containerVariants = {
@@ -288,7 +272,7 @@ const App: React.FC = () => {
                                 <TableHead className="text-slate-200 font-semibold w-[80px] text-center py-4">Email WL</TableHead>
                                 <TableHead className="text-slate-200 font-semibold w-[80px] text-center py-4">Email FUs</TableHead>
                                 <TableHead className="text-slate-200 font-semibold w-[60px] text-center py-4">SMS</TableHead>
-                                {/* <TableHead className="text-slate-200 font-semibold w-[100px] text-center py-4">Analytics</TableHead> */}
+                                <TableHead className="text-slate-200 font-semibold w-[80px] text-center py-4">Notes</TableHead>
                                 <TableHead className="text-slate-200 font-semibold w-[70px] text-center py-4">ROI</TableHead>
                                 <TableHead className="text-slate-200 font-semibold w-[100px] text-center py-4">Touchpoints ON %</TableHead>
                                 <TableHead className="text-slate-200 font-semibold text-right w-[80px] py-4">Actions</TableHead>
@@ -399,9 +383,19 @@ const App: React.FC = () => {
                                         }}
                                       />
                                     </TableCell>
-                                    {/* <TableCell className="text-center py-4">
-                                      <StatusIndicator active={true} />
-                                    </TableCell> */}
+                                    <TableCell className="text-center py-4">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-9 w-9 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-full transition-all duration-200 shadow-inner"
+                                        onClick={() => {
+                                          setSelectedCustomer(customer);
+                                          setShowNotesModal(true);
+                                        }}
+                                      >
+                                        <FileText size={18} />
+                                      </Button>
+                                    </TableCell>
                                     <TableCell className="text-center py-4">
                                       <div className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 font-semibold">4.2x</div>
                                     </TableCell>
@@ -473,13 +467,13 @@ const App: React.FC = () => {
               </Card>
             </TabsContent>
             {activeSection === 'customersuccessoverall' && 
-        <TabsContent value="customersuccessoverall" className="mt-6">
-          <AnalyticsModal />
-          </TabsContent>
-        }
-          </Tabs>
-          
-        ) : (
+            <TabsContent value="customersuccessoverall" className="mt-6">
+              <AnalyticsModal />
+              </TabsContent>
+            }
+              </Tabs>
+              
+            ) : (
           <AnimatePresence>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -511,16 +505,29 @@ const App: React.FC = () => {
       </div>
       
       <AnimatePresence>
-        {/* {showAnalytics && (
+        {showNotesModal && selectedCustomer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <AnalyticsModal onClose={() => setShowAnalytics(false)} />
+            <NotesModal
+              customerId={selectedCustomer._id}
+              customerName={selectedCustomer.name}
+              initialNote={selectedCustomer.note || ""}
+              onClose={() => setShowNotesModal(false)}
+              onSuccess={(updatedNote:any) => {
+                // Update the customer notes in local state
+                setCustomers(prev => prev.map(c => 
+                  c._id === selectedCustomer._id 
+                    ? {...c, note: updatedNote} 
+                    : c
+                ));
+                setShowNotesModal(false);
+              }}
+            />
           </motion.div>
-        )} */}
-        {/* {activeSection === 'customersuccessoverall' && <AnalyticsModal />} */}
+        )}
       </AnimatePresence>
       
       <AnimatePresence>

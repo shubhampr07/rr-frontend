@@ -36,13 +36,9 @@ import {
   MailCheck, 
   Rocket, 
   Mail, 
-  Check,
-  Edit,
   User,
   Plus,
   Trash2,
-  Save,
-  X
 } from "lucide-react";
 
 interface ContactInfo {
@@ -50,15 +46,14 @@ interface ContactInfo {
   type: "email" | "phone";
   value: string;
   isChecked: boolean;
-  isPrimary: boolean;
   isEditing?: boolean;
 }
 
 interface NudgeModalProps {
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string[]; // Updated to array of emails
+  customerPhone: string[]; // Updated to array of phone numbers
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -94,27 +89,29 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
     }
   };
 
-  // Initialize contacts from props
+  // Initialize contacts from props (map over arrays)
   useEffect(() => {
     const initialContacts: ContactInfo[] = [];
     
-    if (customerEmail) {
-      initialContacts.push({
-        id: "email-1",
-        type: "email",
-        value: customerEmail,
-        isChecked: false,
-        isPrimary: true
+    if (customerEmail && customerEmail.length > 0) {
+      customerEmail.forEach((email, index) => {
+        initialContacts.push({
+          id: `email-${index + 1}`,
+          type: "email",
+          value: email,
+          isChecked: false
+        });
       });
     }
     
-    if (customerPhone) {
-      initialContacts.push({
-        id: "phone-1",
-        type: "phone",
-        value: customerPhone,
-        isChecked: false,
-        isPrimary: true
+    if (customerPhone && customerPhone.length > 0) {
+      customerPhone.forEach((phone, index) => {
+        initialContacts.push({
+          id: `phone-${index + 1}`,
+          type: "phone",
+          value: phone,
+          isChecked: false
+        });
       });
     }
     
@@ -183,97 +180,22 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
     );
   };
 
-  const handleEditContact = (id: string) => {
-    setContactList(prevList => 
-      prevList.map(contact => 
-        contact.id === id 
-          ? { ...contact, isEditing: true }
-          : contact
-      )
-    );
-  };
-
-  const handleSaveContact = async (id: string, newValue: string) => {
-    try {
-      // API call to update contact
-      const contactToUpdate = contactList.find(c => c.id === id);
-      if (!contactToUpdate) return;
-
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: contactToUpdate.type,
-            value: newValue
-          })
-        }
-      );
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        // Update local state
-        setContactList(prevList => 
-          prevList.map(contact => 
-            contact.id === id 
-              ? { ...contact, value: newValue, isEditing: false }
-              : contact
-          )
-        );
-      } else {
-        setResponseMsg(data.error || "Error updating contact");
-        setStatus("error");
-      }
-    } catch (error: any) {
-      setResponseMsg("Error: " + error.message);
-      setStatus("error");
-    }
-  };
-
-  const handleDeleteContact = async (id: string) => {
-    try {
-      // API call to delete contact
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}`,
-        {
-          method: "DELETE"
-        }
-      );
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        // Update local state
-        setContactList(prevList => prevList.filter(contact => contact.id !== id));
-      } else {
-        setResponseMsg(data.error || "Error deleting contact");
-        setStatus("error");
-      }
-    } catch (error: any) {
-      setResponseMsg("Error: " + error.message);
-      setStatus("error");
-    }
-  };
-
-  const handleAddContact = async () => {
+  const handleAddEmail = async () => {
     try {
       if (!newContactValue.trim()) {
-        setResponseMsg(`Please enter a valid ${newContactType}`);
+        setResponseMsg("Please enter a valid email address");
         setStatus("error");
         return;
       }
 
-      // API call to add new contact
+      // API call to add new email contact
       const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts`,
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/email`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            type: newContactType,
-            value: newContactValue
+            email: newContactValue
           })
         }
       );
@@ -281,20 +203,21 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
       const data = await res.json();
       
       if (data.success) {
-        // Add to local state with returned ID
+        // Add to local state with returned ID or generate one if none returned
         const newContact: ContactInfo = {
-          id: data.contactId || `${newContactType}-${Date.now()}`,
-          type: newContactType,
+          id: data.contactId || `email-${Date.now()}`,
+          type: "email",
           value: newContactValue,
-          isChecked: true,
-          isPrimary: contactList.filter(c => c.type === newContactType).length === 0
+          isChecked: true
         };
         
         setContactList(prevList => [...prevList, newContact]);
         setNewContactValue("");
         setIsAddingNew(false);
+        setResponseMsg("Email added successfully");
+        setStatus("success");
       } else {
-        setResponseMsg(data.error || "Error adding contact");
+        setResponseMsg(data.error || "Error adding email");
         setStatus("error");
       }
     } catch (error: any) {
@@ -303,34 +226,84 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
     }
   };
 
-  const handleMakePrimary = async (id: string) => {
+  // Handler specifically for adding a new phone number
+  const handleAddPhone = async () => {
     try {
-      const contactToUpdate = contactList.find(c => c.id === id);
-      if (!contactToUpdate) return;
+      if (!newContactValue.trim()) {
+        setResponseMsg("Please enter a valid phone number");
+        setStatus("error");
+        return;
+      }
 
-      // API call to make contact primary
+      // API call to add new phone contact
       const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contacts/${id}/primary`,
+        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/phone`,
         {
-          method: "PUT"
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: newContactValue
+          })
         }
       );
       
       const data = await res.json();
       
       if (data.success) {
-        // Update local state
-        setContactList(prevList => 
-          prevList.map(contact => ({
-            ...contact,
-            isPrimary: contact.id === id && contact.type === contactToUpdate.type
-          }))
-        );
+        // Add to local state with returned ID or generate one if none returned
+        const newContact: ContactInfo = {
+          id: data.contactId || `phone-${Date.now()}`,
+          type: "phone",
+          value: newContactValue,
+          isChecked: true
+        };
+        
+        setContactList(prevList => [...prevList, newContact]);
+        setNewContactValue("");
+        setIsAddingNew(false);
+        setResponseMsg("Phone number added successfully");
+        setStatus("success");
       } else {
-        setResponseMsg(data.error || "Error updating primary contact");
+        setResponseMsg(data.error || "Error adding phone number");
         setStatus("error");
       }
     } catch (error: any) {
+      setResponseMsg("Error: " + error.message);
+      setStatus("error");
+    }
+  };
+
+  const handleDeleteContact = async (contactValue: string, contactType: string) => {
+    try {
+      // Determine the endpoint based on contact type
+      const endpoint = contactType === "email" 
+        ? `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/email`
+        : `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/phone`;
+      
+      // Prepare the request body based on contact type
+      const requestBody = contactType === "email"
+        ? { emails: [contactValue] }
+        : { phones: [contactValue] };
+      
+      // API call to delete contact
+      const res = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody)
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setContactList(prevList => prevList.filter(contact => contact.value !== contactValue));
+        setResponseMsg(`${contactType === "email" ? "Email" : "Phone number"} deleted successfully`);
+        setStatus("success");
+      } else {
+        setResponseMsg(data.error || `Error deleting ${contactType}`);
+        setStatus("error");
+      }
+    }
+    catch (error: any) {
       setResponseMsg("Error: " + error.message);
       setStatus("error");
     }
@@ -475,94 +448,41 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                       <>
                         {filteredContacts.map((contact) => (
                           <div key={contact.id} className="rounded-md border border-slate-700 bg-slate-800 p-3">
-                            {contact.isEditing ? (
-                              <div className="flex gap-2 items-center">
-                                <Input 
-                                  defaultValue={contact.value}
-                                  id={`edit-${contact.id}`}
-                                  className="bg-slate-900 border-slate-700 text-slate-300 flex-1"
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Checkbox 
+                                  id={`check-${contact.id}`}
+                                  checked={contact.isChecked}
+                                  onCheckedChange={() => handleContactToggle(contact.id)}
+                                  className="border-slate-600 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
                                 />
-                                <Button
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleSaveContact(contact.id, (document.getElementById(`edit-${contact.id}`) as HTMLInputElement)?.value || "")}
-                                  className="h-8 w-8 p-0 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300"
-                                >
-                                  <Save size={14} />
-                                </Button>
-                                <Button
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => setContactList(prevList => prevList.map(c => c.id === contact.id ? {...c, isEditing: false} : c))}
-                                  className="h-8 w-8 p-0 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-300"
-                                >
-                                  <X size={14} />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Checkbox 
-                                    id={`check-${contact.id}`}
-                                    checked={contact.isChecked}
-                                    onCheckedChange={() => handleContactToggle(contact.id)}
-                                    className="border-slate-600 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
-                                  />
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      {contact.type === "email" ? 
-                                        <Mail size={14} className="text-amber-400" /> : 
-                                        <Phone size={14} className="text-emerald-400" />
-                                      }
-                                      <span className="text-slate-300">{contact.value}</span>
-                                    </div>
-                                    {contact.isPrimary && (
-                                      <span className="text-xs text-indigo-400 mt-1 block">Primary</span>
-                                    )}
+                                {/* <div> */}
+                                  <div className="flex items-center gap-2">
+                                    {contact.type === "email" ? 
+                                      <Mail size={14} className="text-amber-400" /> : 
+                                      <Phone size={14} className="text-emerald-400" />
+                                    }
+                                    <span className="text-slate-300">{contact.value}</span>
                                   </div>
                                 </div>
-                                
-                                <div className="flex items-center">
-                                  {!contact.isPrimary && (
-                                    <Button
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleMakePrimary(contact.id)}
-                                      className="h-7 text-xs px-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700"
-                                    >
-                                      Set Primary
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleEditContact(contact.id)}
-                                    className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-white hover:bg-slate-700"
-                                  >
-                                    <Edit size={14} />
-                                  </Button>
-                                  {!contact.isPrimary && (
-                                    <Button
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleDeleteContact(contact.id)}
-                                      className="h-7 w-7 p-0 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-700"
-                                    >
-                                      <Trash2 size={14} />
-                                    </Button>
-                                  )}
-                                </div>
+                                <Trash2 
+                                      size={14} 
+                                      className="text-slate-400 cursor-pointer hover:text-slate-300"
+                                      onClick={() => {
+                                        handleDeleteContact(contact.value, contact.type);
+                                      }}
+                                    />
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          // </div>
                         ))}
                         
                         {filteredContacts.length > 1 && (
+                          <>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Select/deselect all contacts
                               const allChecked = filteredContacts.every(c => c.isChecked);
                               setContactList(prevList => 
                                 prevList.map(contact => 
@@ -577,6 +497,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                             {filteredContacts.every(c => c.isChecked) ? "Deselect All" : "Select All"} 
                             {channel === "email" ? " Emails" : " Phone Numbers"}
                           </Button>
+                          </>
                         )}
                       </>
                     ) : (
@@ -589,7 +510,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                       <div className="mt-3 p-3 rounded-md border border-indigo-500/30 bg-indigo-500/10">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
-                            {channel === "email" ? 
+                            {newContactType === "email" ? 
                               <Mail size={14} className="text-amber-400" /> : 
                               <Phone size={14} className="text-emerald-400" />
                             }
@@ -606,7 +527,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={handleAddContact}
+                              onClick={newContactType === "email" ? handleAddEmail : handleAddPhone}
                               className="bg-indigo-500/20 hover:bg-indigo-500/30 border-indigo-500/30 text-indigo-300"
                             >
                               Add
@@ -677,12 +598,7 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent"></div>
                 Sending...
               </>
-            ) : status === "success" ? (
-              <>
-                <Check className="h-4 w-4" />
-                Sent
-              </>
-            ) : (
+            )  : (
               <>
                 <Send className="h-4 w-4" />
                 Send Nudge{filteredContacts.filter(c => c.isChecked).length > 1 ? " to All" : ""}
