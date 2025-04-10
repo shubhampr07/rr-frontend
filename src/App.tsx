@@ -34,6 +34,7 @@ import TouchpointSwitch from "./components/TouchPointSwitch";
 import AnalyticsModal from "./components/AnalyticsModal";
 import NotesModal from "./components/NotesModal";
 import {getCustomers} from "./api/customerApi"
+
 // Floating gradient background component
 // const BackgroundGradient = () => (
 //   <div className="fixed inset-0 z-[-1]">
@@ -100,7 +101,7 @@ const App: React.FC = () => {
   const [showCustomerAnalytics, setShowCustomerAnalytics] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<string>("customers");
   const [showNotesModal, setShowNotesModal] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     try {
