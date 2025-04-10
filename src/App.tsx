@@ -33,7 +33,7 @@ import AnalyticsPage from "./components/analytics/AnalyticsPage";
 import TouchpointSwitch from "./components/TouchPointSwitch";
 import AnalyticsModal from "./components/AnalyticsModal";
 import NotesModal from "./components/NotesModal";
-
+import {getCustomers} from "./api/customerApi"
 // Floating gradient background component
 // const BackgroundGradient = () => (
 //   <div className="fixed inset-0 z-[-1]">
@@ -100,17 +100,15 @@ const App: React.FC = () => {
   const [showCustomerAnalytics, setShowCustomerAnalytics] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<string>("customers");
   const [showNotesModal, setShowNotesModal] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch("https://rr-backend-h3f5.onrender.com/api/customers");
-      const data = await res.json();
-      if (data.success) {
-        setCustomers(data.data);
-      } else {
-        console.error("Error fetching customers:", data.error);
-      }
+      const data = await getCustomers();
+      setCustomers(data);
+      setError(null);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);
@@ -121,7 +119,7 @@ const App: React.FC = () => {
     fetchCustomers();
   }, []);
 
-  // Animation variants
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -517,7 +515,6 @@ const App: React.FC = () => {
               initialNote={selectedCustomer.note || ""}
               onClose={() => setShowNotesModal(false)}
               onSuccess={(updatedNote:any) => {
-                // Update the customer notes in local state
                 setCustomers(prev => prev.map(c => 
                   c._id === selectedCustomer._id 
                     ? {...c, note: updatedNote} 

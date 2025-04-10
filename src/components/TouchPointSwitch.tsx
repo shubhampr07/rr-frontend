@@ -1,5 +1,6 @@
 import React from "react";
 import { Switch } from "./ui/switch";
+import { updateCustomerTouchpoint } from "../api/customerApi";
 
 interface TouchpointSwitchProps {
   isEnabled: boolean;
@@ -20,25 +21,11 @@ const TouchpointSwitch: React.FC<TouchpointSwitchProps> = ({
     // Optimistically update the UI
     setChecked(newValue);
     try {
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            [`touchpoints.${touchpointKey}`]: newValue,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (!data.success) {
-        console.error("Error updating touchpoint:", data.error);
-        // Revert the UI change if the API call fails
-        setChecked(!newValue);
-      } else {
-        onToggleSuccess && onToggleSuccess(newValue);
-      }
+      // Make the API call to update the touchpoint
+      await updateCustomerTouchpoint(customerId, touchpointKey, newValue);
+      onToggleSuccess && onToggleSuccess(newValue);
     } catch (error) {
+      // Revert the UI change if the API call fails
       console.error("API call error:", error);
       setChecked(!newValue);
     }

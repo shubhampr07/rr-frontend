@@ -40,6 +40,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { addEmailContact, addPhoneContact, deleteContact, sendNudge } from "../api/nudgeApi";
 
 interface ContactInfo {
   id: string;
@@ -143,27 +144,15 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
       }
       
       // Send POST with all selected recipients
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/nudge/${customerId}/${touchpoint}/${channel}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipients: selectedContacts
-          })
-        }
+      await sendNudge(customerId, touchpoint, channel, selectedContacts);
+
+      setResponseMsg(
+        `Nudge sent successfully to ${
+          selectedContacts.length
+        } ${selectedContacts.length > 1 ? "contacts" : "contact"}`
       );
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setResponseMsg(`Nudge sent successfully to ${selectedContacts.length} ${selectedContacts.length > 1 ? "contacts" : "contact"}`);
-        setStatus("success");
-        onSuccess && onSuccess();
-      } else {
-        setResponseMsg(data.error || "Error sending nudge");
-        setStatus("error");
-      }
+      setStatus("success");
+      onSuccess && onSuccess();
     } catch (error: any) {
       setResponseMsg("Error: " + error.message);
       setStatus("error");
@@ -188,45 +177,26 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
         return;
       }
 
-      // API call to add new email contact
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/email`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: newContactValue
-          })
-        }
-      );
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        // Add to local state with returned ID or generate one if none returned
-        const newContact: ContactInfo = {
-          id: data.contactId || `email-${Date.now()}`,
-          type: "email",
-          value: newContactValue,
-          isChecked: true
-        };
-        
-        setContactList(prevList => [...prevList, newContact]);
-        setNewContactValue("");
-        setIsAddingNew(false);
-        setResponseMsg("Email added successfully");
-        setStatus("success");
-      } else {
-        setResponseMsg(data.error || "Error adding email");
-        setStatus("error");
-      }
+      const contactId = await addEmailContact(customerId, newContactValue);
+
+    const newContact: ContactInfo = {
+      id: contactId,
+      type: "email",
+      value: newContactValue,
+      isChecked: true,
+    };
+
+    setContactList(prevList => [...prevList, newContact]);
+    setNewContactValue("");
+    setIsAddingNew(false);
+    setResponseMsg("Email added successfully");
+    setStatus("success");
     } catch (error: any) {
       setResponseMsg("Error: " + error.message);
       setStatus("error");
     }
   };
 
-  // Handler specifically for adding a new phone number
   const handleAddPhone = async () => {
     try {
       if (!newContactValue.trim()) {
@@ -235,81 +205,45 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
         return;
       }
 
-      // API call to add new phone contact
-      const res = await fetch(
-        `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/phone`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: newContactValue
-          })
-        }
-      );
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        // Add to local state with returned ID or generate one if none returned
-        const newContact: ContactInfo = {
-          id: data.contactId || `phone-${Date.now()}`,
-          type: "phone",
-          value: newContactValue,
-          isChecked: true
-        };
-        
-        setContactList(prevList => [...prevList, newContact]);
-        setNewContactValue("");
-        setIsAddingNew(false);
-        setResponseMsg("Phone number added successfully");
-        setStatus("success");
-      } else {
-        setResponseMsg(data.error || "Error adding phone number");
-        setStatus("error");
-      }
+      const contactId = await addPhoneContact(customerId, newContactValue);
+
+      // Create the new contact object
+      const newContact: ContactInfo = {
+        id: contactId,
+        type: "phone",
+        value: newContactValue,
+        isChecked: true,
+      };
+  
+      setContactList(prevList => [...prevList, newContact]);
+      setNewContactValue("");
+      setIsAddingNew(false);
+      setResponseMsg("Phone number added successfully");
+      setStatus("success");
+  
     } catch (error: any) {
       setResponseMsg("Error: " + error.message);
       setStatus("error");
     }
   };
 
-  const handleDeleteContact = async (contactValue: string, contactType: string) => {
+  const handleDeleteContact = async (contactValue: string, contactType: "email" | "phone") => {
     try {
-      // Determine the endpoint based on contact type
-      const endpoint = contactType === "email" 
-        ? `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/email`
-        : `https://rr-backend-h3f5.onrender.com/api/customers/${customerId}/contact/phone`;
-      
-      // Prepare the request body based on contact type
-      const requestBody = contactType === "email"
-        ? { emails: [contactValue] }
-        : { phones: [contactValue] };
-      
-      // API call to delete contact
-      const res = await fetch(endpoint, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody)
-      });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setContactList(prevList => prevList.filter(contact => contact.value !== contactValue));
-        setResponseMsg(`${contactType === "email" ? "Email" : "Phone number"} deleted successfully`);
-        setStatus("success");
-      } else {
-        setResponseMsg(data.error || `Error deleting ${contactType}`);
-        setStatus("error");
-      }
-    }
-    catch (error: any) {
+      await deleteContact(customerId, contactType, contactValue);
+  
+      setContactList(prevList =>
+        prevList.filter(contact => contact.value !== contactValue)
+      );
+      setResponseMsg(
+        `${contactType === "email" ? "Email" : "Phone number"} deleted successfully`
+      );
+      setStatus("success");
+    } catch (error: any) {
       setResponseMsg("Error: " + error.message);
       setStatus("error");
     }
   };
 
-  // Map of touchpoint IDs to display names and icons
   const touchpointOptions = [
     { id: "referralWelcomePopup", label: "Referral Welcome Popup", icon: <Rocket size={16} className="text-indigo-400" /> },
     { id: "extension", label: "Extension", icon: <Rocket size={16} className="text-blue-400" /> },
@@ -321,7 +255,6 @@ const NudgeModal: React.FC<NudgeModalProps> = ({
     { id: "abandonedCart", label: "Abandoned Cart", icon: <RefreshCw size={16} className="text-rose-400" /> }
   ];
 
-  // Map of channel options with icons
   const channelOptions = [
     { id: "email", label: "Email", icon: <Mail size={16} className="text-amber-400" /> },
     { id: "whatsapp", label: "WhatsApp", icon: <Phone size={16} className="text-emerald-400" /> }

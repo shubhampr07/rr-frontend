@@ -37,15 +37,8 @@ import {
   MailQuestion,
   Search
 } from "lucide-react";
+import { getNudgeLogs, NudgeLog } from "../api/nudgeApi";
 
-interface NudgeLog {
-  _id: string;
-  touchpoint: string;
-  channel: string;
-  sentAt: string;
-  success: boolean;
-  errorMessage?: string;
-}
 
 interface NudgeLogsModalProps {
   customerId: string;
@@ -62,6 +55,8 @@ const NudgeLogsModal: React.FC<NudgeLogsModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "success" | "failed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [_error, setError] = useState<string | null>(null);
+
 
   // Animation variants
   const containerVariants = {
@@ -82,15 +77,13 @@ const NudgeLogsModal: React.FC<NudgeLogsModalProps> = ({
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`https://rr-backend-h3f5.onrender.com/api/nudge/logs/${customerId}`);
-      const data = await res.json();
-      if (data.success) {
-        setLogs(data.data);
-      } else {
-        console.error("Error fetching logs:", data.error);
-      }
+      setError(null);
+      
+      const data = await getNudgeLogs(customerId);
+      setLogs(data);
     } catch (error: any) {
       console.error("Fetch error:", error.message);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -110,7 +103,6 @@ const NudgeLogsModal: React.FC<NudgeLogsModalProps> = ({
     });
   };
 
-  // Function to get the appropriate channel icon
   const getChannelIcon = (channel: string) => {
     switch (channel.toLowerCase()) {
       case 'email':

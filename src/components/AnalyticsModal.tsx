@@ -28,30 +28,12 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { getSuccessMetrics, Metrics } from '../api/metricsApi';
 
-interface Metrics {
-  totalCustomers: number;
-  customerSuccessRate: {
-    referralWelcomePopup: number;
-    extension: number;
-    referralForm: number;
-    whatsappWhitelabeled: number;
-    whatsappFollowUps: number;
-    emailWhitelabeled: number;
-    emailFollowUps: number;
-    qualityOffer: number;
-    allCustomersCanUseCode: number;
-    overall: number;
-  };
-  successBreakdown: Array<{
-    customerId: string;
-    customerName: string;
-    successRate: number;
-  }>;
-}
 
 const AnalyticsModal: React.FC = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -73,14 +55,11 @@ const AnalyticsModal: React.FC = () => {
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch("https://rr-backend-h3f5.onrender.com/api/metrics/success");
-      const data = await res.json();
-      if (data.success) {
-        setMetrics(data.data);
-      } else {
-        console.error("Error fetching metrics:", data.error);
-      }
+      const data = await getSuccessMetrics();
+      setMetrics(data);
+      setError(null);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);

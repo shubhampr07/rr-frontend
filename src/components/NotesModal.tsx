@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import toast from "react-hot-toast";
+import { saveCustomerNote } from "../api/customerApi";
 
 interface NotesModalProps {
   customerId: string;
@@ -22,40 +23,20 @@ const NotesModal: React.FC<NotesModalProps> = ({ customerId, customerName, initi
   const handleSaveNote = async () => {
     try {
       setIsSaving(true);
+      await saveCustomerNote(customerId, note);
       
-      // Make API call to save the note
-      const response = await fetch('https://rr-backend-h3f5.onrender.com/api/customers/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          note
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save note');
-      }
-      
-      // Show success toast
       toast.success(`Note for ${customerName} saved successfully`);
-      
-      // Only close modal and call onSuccess if API request was successful
+
       if (onSuccess) onSuccess(note);
       onClose();
       
     } catch (error) {
       console.error("Error saving note:", error);
-      
-      // Show error toast but don't close the modal
       toast.error("Failed to save note. Please try again.");
       setIsSaving(false);
     }
   };
 
-  // Separate handler for the cancel button
   const handleCancel = () => {
     onClose();
   };
